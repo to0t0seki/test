@@ -2,9 +2,420 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Hello World</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今日の株価</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: #0f1117;
+      color: #e8eaed;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1d27;
+      border-bottom: 1px solid #2d3142;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    #last-updated {
+      font-size: 0.8rem;
+      color: #8b95a5;
+    }
+
+    #date-display {
+      font-size: 0.95rem;
+      color: #a0aab5;
+      margin-bottom: 4px;
+    }
+
+    .main-content {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #6b7280;
+      margin-bottom: 12px;
+      margin-top: 32px;
+    }
+
+    .section-title:first-of-type {
+      margin-top: 0;
+    }
+
+    .stock-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .stock-card {
+      background: #1a1d27;
+      border: 1px solid #2d3142;
+      border-radius: 12px;
+      padding: 18px 20px;
+      cursor: default;
+      transition: border-color 0.2s, transform 0.1s;
+    }
+
+    .stock-card:hover {
+      border-color: #4a5568;
+      transform: translateY(-1px);
+    }
+
+    .stock-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .stock-symbol {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .stock-name {
+      font-size: 0.72rem;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .stock-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: #2d3142;
+      color: #a0aab5;
+    }
+
+    .stock-price {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    .stock-price .currency {
+      font-size: 0.85rem;
+      color: #8b95a5;
+      font-weight: 400;
+      margin-right: 2px;
+    }
+
+    .stock-change {
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .change-amount {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .change-pct {
+      font-size: 0.8rem;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-weight: 600;
+    }
+
+    .up .change-amount { color: #34d399; }
+    .up .change-pct { background: rgba(52,211,153,0.15); color: #34d399; }
+
+    .down .change-amount { color: #f87171; }
+    .down .change-pct { background: rgba(248,113,113,0.15); color: #f87171; }
+
+    .flat .change-amount { color: #9ca3af; }
+    .flat .change-pct { background: rgba(156,163,175,0.15); color: #9ca3af; }
+
+    .loading-text {
+      color: #4b5563;
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    #status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 28px;
+      padding: 10px 14px;
+      background: #1a1d27;
+      border: 1px solid #2d3142;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: #8b95a5;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4b5563;
+      flex-shrink: 0;
+    }
+
+    .status-dot.loading {
+      background: #f59e0b;
+      animation: pulse 1s infinite;
+    }
+
+    .status-dot.ok {
+      background: #34d399;
+    }
+
+    .status-dot.error {
+      background: #f87171;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .refresh-btn {
+      margin-left: auto;
+      background: none;
+      border: 1px solid #2d3142;
+      color: #8b95a5;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .refresh-btn:hover {
+      border-color: #4a5568;
+      color: #e8eaed;
+    }
+
+    .market-time {
+      font-size: 0.75rem;
+      color: #4b5563;
+      margin-top: 4px;
+    }
+
+    .error-message {
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.3);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #f87171;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    footer {
+      text-align: center;
+      padding: 32px;
+      color: #3d4454;
+      font-size: 0.75rem;
+    }
+  </style>
 </head>
 <body>
-  <h1>Hello World</h1>
+
+<header>
+  <div>
+    <div id="date-display">読み込み中...</div>
+    <h1>今日の株価</h1>
+  </div>
+  <div style="text-align:right">
+    <div id="last-updated"></div>
+  </div>
+</header>
+
+<div class="main-content">
+  <div id="status-bar">
+    <div class="status-dot loading" id="status-dot"></div>
+    <span id="status-text">株価データを取得中...</span>
+    <button class="refresh-btn" onclick="fetchAllStocks()">更新</button>
+  </div>
+
+  <div class="error-message" id="error-message"></div>
+
+  <div class="section-title">米国株 — US Stocks</div>
+  <div class="stock-grid" id="us-stocks"></div>
+
+  <div class="section-title">日本株 — Japanese Stocks</div>
+  <div class="stock-grid" id="jp-stocks"></div>
+</div>
+
+<footer>
+  データは Yahoo Finance より取得。遅延が生じる場合があります。投資判断の根拠としないでください。
+</footer>
+
+<script>
+  const US_STOCKS = [
+    { symbol: 'AAPL',  name: 'Apple' },
+    { symbol: 'MSFT',  name: 'Microsoft' },
+    { symbol: 'GOOGL', name: 'Alphabet' },
+    { symbol: 'AMZN',  name: 'Amazon' },
+    { symbol: 'NVDA',  name: 'NVIDIA' },
+    { symbol: 'TSLA',  name: 'Tesla' },
+    { symbol: 'META',  name: 'Meta' },
+    { symbol: 'BRK-B', name: 'Berkshire B' },
+  ];
+
+  const JP_STOCKS = [
+    { symbol: '7203.T', name: 'トヨタ自動車' },
+    { symbol: '6758.T', name: 'ソニーグループ' },
+    { symbol: '9984.T', name: 'ソフトバンクG' },
+    { symbol: '8306.T', name: '三菱UFJ FG' },
+    { symbol: '6861.T', name: 'キーエンス' },
+    { symbol: '4063.T', name: '信越化学工業' },
+    { symbol: '9432.T', name: 'NTT' },
+    { symbol: '6501.T', name: '日立製作所' },
+  ];
+
+  function formatDate(d) {
+    const days = ['日','月','火','水','木','金','土'];
+    return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
+  }
+
+  function formatTime(d) {
+    return d.toTimeString().slice(0,8);
+  }
+
+  function setStatus(state, text) {
+    const dot = document.getElementById('status-dot');
+    dot.className = 'status-dot ' + state;
+    document.getElementById('status-text').textContent = text;
+  }
+
+  function renderPlaceholders(containerId, stocks) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = stocks.map(s => `
+      <div class="stock-card" id="card-${s.symbol.replace('.','-')}">
+        <div class="stock-header">
+          <div>
+            <div class="stock-symbol">${s.symbol}</div>
+            <div class="stock-name">${s.name}</div>
+          </div>
+        </div>
+        <div class="stock-price"><span class="loading-text">取得中...</span></div>
+        <div class="stock-change"></div>
+      </div>
+    `).join('');
+  }
+
+  function updateCard(data) {
+    const symbol = data.symbol;
+    const id = 'card-' + symbol.replace('.', '-');
+    const card = document.getElementById(id);
+    if (!card) return;
+
+    const price = data.regularMarketPrice;
+    const change = data.regularMarketChange;
+    const changePct = data.regularMarketChangePercent;
+    const currency = data.currency || 'USD';
+    const currencySymbol = currency === 'JPY' ? '¥' : '$';
+
+    const direction = change > 0 ? 'up' : change < 0 ? 'down' : 'flat';
+    const sign = change > 0 ? '+' : '';
+
+    const priceStr = currency === 'JPY'
+      ? price.toLocaleString('ja-JP', { maximumFractionDigits: 0 })
+      : price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const changeStr = currency === 'JPY'
+      ? sign + change.toLocaleString('ja-JP', { maximumFractionDigits: 0 })
+      : sign + change.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    card.innerHTML = `
+      <div class="stock-header">
+        <div>
+          <div class="stock-symbol">${symbol}</div>
+          <div class="stock-name">${data.shortName || data.longName || ''}</div>
+        </div>
+        <div class="stock-badge">${currency}</div>
+      </div>
+      <div class="stock-price">
+        <span class="currency">${currencySymbol}</span>${priceStr}
+      </div>
+      <div class="stock-change ${direction}">
+        <span class="change-amount">${changeStr}</span>
+        <span class="change-pct">${sign}${changePct.toFixed(2)}%</span>
+      </div>
+    `;
+  }
+
+  async function fetchQuotes(symbols) {
+    const joined = symbols.join(',');
+    const url = `https://query1.finance.yahoo.com/v7/finance/quote?lang=en-US&region=US&corsDomain=finance.yahoo.com&symbols=${encodeURIComponent(joined)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    return json.quoteResponse.result;
+  }
+
+  async function fetchAllStocks() {
+    setStatus('loading', '株価データを取得中...');
+    document.getElementById('error-message').style.display = 'none';
+
+    renderPlaceholders('us-stocks', US_STOCKS);
+    renderPlaceholders('jp-stocks', JP_STOCKS);
+
+    const allSymbols = [...US_STOCKS, ...JP_STOCKS].map(s => s.symbol);
+
+    try {
+      const results = await fetchQuotes(allSymbols);
+      results.forEach(d => updateCard(d));
+
+      const now = new Date();
+      document.getElementById('last-updated').textContent = `最終更新: ${formatTime(now)}`;
+      setStatus('ok', `${results.length} 銘柄のデータを取得しました`);
+    } catch (err) {
+      console.error(err);
+      const errEl = document.getElementById('error-message');
+      errEl.textContent = `データの取得に失敗しました: ${err.message}。しばらくしてから再試行してください。`;
+      errEl.style.display = 'block';
+      setStatus('error', 'データ取得エラー');
+
+      document.querySelectorAll('.stock-price .loading-text').forEach(el => {
+        el.textContent = '取得失敗';
+      });
+    }
+  }
+
+  // Set date
+  const now = new Date();
+  document.getElementById('date-display').textContent = formatDate(now);
+
+  // Initial fetch
+  fetchAllStocks();
+
+  // Auto-refresh every 60 seconds
+  setInterval(fetchAllStocks, 60000);
+</script>
 </body>
 </html>
