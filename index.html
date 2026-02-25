@@ -369,6 +369,25 @@
     `;
   }
 
+  const SAMPLE_DATA = [
+    { symbol: 'AAPL',   shortName: 'Apple Inc.',          regularMarketPrice: 227.52, regularMarketChange: 1.84,  regularMarketChangePercent: 0.81,  currency: 'USD' },
+    { symbol: 'MSFT',   shortName: 'Microsoft Corp.',     regularMarketPrice: 415.50, regularMarketChange: -2.10, regularMarketChangePercent: -0.50, currency: 'USD' },
+    { symbol: 'GOOGL',  shortName: 'Alphabet Inc.',       regularMarketPrice: 176.30, regularMarketChange: 0.95,  regularMarketChangePercent: 0.54,  currency: 'USD' },
+    { symbol: 'AMZN',   shortName: 'Amazon.com Inc.',     regularMarketPrice: 220.80, regularMarketChange: 3.20,  regularMarketChangePercent: 1.47,  currency: 'USD' },
+    { symbol: 'NVDA',   shortName: 'NVIDIA Corp.',        regularMarketPrice: 135.40, regularMarketChange: -1.60, regularMarketChangePercent: -1.17, currency: 'USD' },
+    { symbol: 'TSLA',   shortName: 'Tesla Inc.',          regularMarketPrice: 248.90, regularMarketChange: 5.70,  regularMarketChangePercent: 2.34,  currency: 'USD' },
+    { symbol: 'META',   shortName: 'Meta Platforms',      regularMarketPrice: 612.30, regularMarketChange: 8.40,  regularMarketChangePercent: 1.39,  currency: 'USD' },
+    { symbol: 'BRK-B',  shortName: 'Berkshire Hathaway B',regularMarketPrice: 471.20, regularMarketChange: -0.80, regularMarketChangePercent: -0.17, currency: 'USD' },
+    { symbol: '7203.T', shortName: 'トヨタ自動車',         regularMarketPrice: 3720,   regularMarketChange: 45,    regularMarketChangePercent: 1.22,  currency: 'JPY' },
+    { symbol: '6758.T', shortName: 'ソニーグループ',       regularMarketPrice: 2850,   regularMarketChange: -30,   regularMarketChangePercent: -1.04, currency: 'JPY' },
+    { symbol: '9984.T', shortName: 'ソフトバンクG',        regularMarketPrice: 12400,  regularMarketChange: 150,   regularMarketChangePercent: 1.22,  currency: 'JPY' },
+    { symbol: '8306.T', shortName: '三菱UFJ FG',           regularMarketPrice: 1852,   regularMarketChange: 18,    regularMarketChangePercent: 0.98,  currency: 'JPY' },
+    { symbol: '6861.T', shortName: 'キーエンス',           regularMarketPrice: 65200,  regularMarketChange: -400,  regularMarketChangePercent: -0.61, currency: 'JPY' },
+    { symbol: '4063.T', shortName: '信越化学工業',         regularMarketPrice: 5980,   regularMarketChange: 60,    regularMarketChangePercent: 1.01,  currency: 'JPY' },
+    { symbol: '9432.T', shortName: 'NTT',                  regularMarketPrice: 155,    regularMarketChange: 1,     regularMarketChangePercent: 0.65,  currency: 'JPY' },
+    { symbol: '6501.T', shortName: '日立製作所',           regularMarketPrice: 4250,   regularMarketChange: -20,   regularMarketChangePercent: -0.47, currency: 'JPY' },
+  ];
+
   async function fetchQuotes(symbols) {
     const joined = symbols.join(',');
     const url = `https://query1.finance.yahoo.com/v7/finance/quote?lang=en-US&region=US&corsDomain=finance.yahoo.com&symbols=${encodeURIComponent(joined)}`;
@@ -376,6 +395,16 @@
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     return json.quoteResponse.result;
+  }
+
+  function showSampleData() {
+    SAMPLE_DATA.forEach(d => updateCard(d));
+    const now = new Date();
+    document.getElementById('last-updated').textContent = `最終更新: ${formatTime(now)}`;
+    const errEl = document.getElementById('error-message');
+    errEl.textContent = 'リアルタイムデータの取得に失敗しました。サンプルデータを表示しています。';
+    errEl.style.display = 'block';
+    setStatus('error', 'サンプルデータ表示中');
   }
 
   async function fetchAllStocks() {
@@ -396,14 +425,7 @@
       setStatus('ok', `${results.length} 銘柄のデータを取得しました`);
     } catch (err) {
       console.error(err);
-      const errEl = document.getElementById('error-message');
-      errEl.textContent = `データの取得に失敗しました: ${err.message}。しばらくしてから再試行してください。`;
-      errEl.style.display = 'block';
-      setStatus('error', 'データ取得エラー');
-
-      document.querySelectorAll('.stock-price .loading-text').forEach(el => {
-        el.textContent = '取得失敗';
-      });
+      showSampleData();
     }
   }
 
